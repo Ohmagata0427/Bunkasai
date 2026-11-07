@@ -1,0 +1,54 @@
+# main ブランチに push するたびに、deploy/ を作って GitHub Pages に公開し、QRコードも作る。
+name: Deploy to GitHub Pages
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+concurrency:
+  group: pages
+  cancel-in-progress: true
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install pillow
+      - run: python incidents/tools/build_deploy.py
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: incidents/deploy
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    outputs:
+      url: ${{ steps.deployment.outputs.page_url }}
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
+  qr:
+    needs: deploy
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: QRコードを作る（公開URLを自動で入れる）
+        run: python incidents/tools/make_qr.py "${{ needs.deploy.outputs.url }}" incidents/qr_incidents
+      - uses: actions/upload-artifact@v4
+        with:
+          name: qr-code
+          path: |
+            incidents/qr_incidents.png
+            incidents/qr_incidents.svg
