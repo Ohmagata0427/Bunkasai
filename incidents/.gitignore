@@ -1,0 +1,4 @@
+deploy/
+qr_incidents.*
+__pycache__/
+.DS_Store

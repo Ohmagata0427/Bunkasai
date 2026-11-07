@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>INCIDENTS</title>
+<meta name="theme-color" content="#0a0d0f">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="titlebar"><span class="tb-icon"></span><span id="tbTitle">INCIDENTS — 調査端末</span><button id="soundBtn" type="button" class="tb-sound" aria-pressed="true">音：ON</button><span class="tb-ctl" aria-hidden="true"><i>—</i><i>□</i><i>×</i></span></div>
+<header id="bar" hidden>
+  <span id="caseTitle"></span>
+  <span>経過 <b id="time">0</b>秒</span>
+  <span>問題点 <b id="total">0</b></span>
+  <span>発見 <b id="count">0</b></span>
+  <span>誤報告 <b id="wrong">0</b></span>
+  <button id="backBtn" type="button">オフィスへ戻る</button>
+</header>
+
+<main>
+  <section id="start">
+    <div class="dialog">
+      <div class="dlg-cap">調査依頼</div>
+      <div class="dlg-body">
+        <h1>INCIDENTS</h1>
+        <p class="lead">あなたは調査員です。依頼を受けた組織の記録を読み、何が起きうる状態だったかを報告してください。</p>
+        <dl class="sheet"><dt>立場</dt><dd>調査員（依頼を受けた第三者）</dd><dt>任務</dt><dd>記録を読み、問題点をすべて見つけて報告する</dd><dt>注意</dt><dd>この作品は架空の企業・人物・文書による展示用ゲームです。</dd></dl>
+        <div class="modes">
+          <button id="startBtn" type="button" class="primary">調査を始める</button>
+          <button id="startHardBtn" type="button" class="hardbtn">ハードモードで始める</button>
+        </div>
+        <p class="modenote">ハードモード：誤報告は3回で任務失敗／問題点を見つけたあと、深刻度の順に並べ替える／現場調査の選択肢にダミーが混ざる／スコア1.5倍</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="intro" hidden>
+    <h2 class="introTitle">調査の手順</h2>
+    <p class="small introLead">はじめに、ゲームの流れを確認してください。</p>
+    <div class="steps">
+      <article class="step"><span class="n">1</span><h3>記録を調べる</h3>
+        <p>オフィスにある書類・端末・書棚をクリックすると、記録が開きます。</p>
+        <img src="img/office.png" alt="オフィス画面。クリックできる調査対象が並んでいる"></article>
+      <article class="step"><span class="n">2</span><h3>問題点を長押しで報告</h3>
+        <p>問題だと思う行を長押し。円が一周すると報告されます。</p>
+        <img src="img/report.png" alt="文書の行を長押しして報告している画面"></article>
+      <article class="step"><span class="n">3</span><h3>すべて見つけると解説へ</h3>
+        <p>見落としがある間は、調査が続きます。全件報告すると、解説が表示されます。</p>
+        <img src="img/result.png" alt="結果画面。特定した問題点が深刻度の高い順に並ぶ"></article>
+      <article class="step danger"><span class="n">4</span><h3>誤報告に注意</h3>
+        <p>問題でない行を報告すると「誤報告」です。<b id="introMaxW">4回目で任務失敗</b>になります。</p>
+        <div class="hudsample" aria-hidden="true"><span class="pill">問題点 <b>4</b></span><span class="pill">発見 <b>1</b></span><span class="pill bad">誤報告 <b>3</b> / 4</span></div>
+        <p class="small">上部の数字：問題点＝見つけるべき総数／発見＝報告済み／誤報告＝間違えた回数</p></article>
+    </div>
+    <p class="small introNote">資料はすべて架空の企業・人物・文書です。記録から確実に言えること（事実）と、推測できること（可能性）を区別して読んでください。</p>
+    <button id="introBtn" type="button" class="primary">調査を開始する</button>
+  </section>
+
+  <section id="office" hidden>
+    <p class="hint" id="hint1"></p>
+    <div id="room"></div>
+    <p class="hint">問題を見つけたら、該当する行を長押しして「報告」します。すべて見つかると事件が終了します。</p>
+  </section>
+
+  <section id="doc" hidden>
+    <h2 id="docTitle"></h2>
+    <p id="docMeta" class="small"></p>
+    <p class="hint" id="docHint"></p>
+    <div id="docBody"></div>
+  </section>
+
+  <section id="arg" hidden>
+    <div id="argFinal">
+      <h2>現場調査：最終問題</h2>
+      <p id="argIntro"></p>
+      <p>教室内で確認した事象と、そこから生じる危険性を正しく対応させてください。</p>
+      <p class="small">空欄をタップしてから、下の選択肢をタップして入れてください。入れた選択肢は、もう一度タップすると戻せます。</p>
+      <div id="argQuestions" class="arg-questions"></div>
+      <div id="argBank" class="arg-choicebank card"></div>
+      <p id="argFinalMsg" role="status" aria-live="polite"></p>
+      <button id="argFinalSubmit" type="button" class="primary">回答する</button>
+      <div><button id="skipBtn" type="button" class="skip"></button></div>
+    </div>
+  </section>
+
+  <section id="rank" hidden>
+    <h2><span class="hardtag">HARD</span>優先度の判定</h2>
+    <p>すべての問題点を報告しました。最後に、<b>深刻度の高い順</b>に並べ替えてください。</p>
+    <p class="small">深刻度は「兆候（実際に起きた可能性を示す記録）→ 脆弱性（悪用され得る弱点）→ 不備（ルールや運用の不備）」の順です。同じ種類どうしの順序は問いません。▲▼で入れ替え、「判定する」を押してください。</p>
+    <ol id="rankList" class="rank-list"></ol>
+    <p id="rankMsg" role="status" aria-live="polite"></p>
+    <button id="rankSubmit" type="button" class="primary">判定する</button>
+  </section>
+
+  <section id="result" hidden>
+    <h2 id="resTitle"></h2>
+    <div id="resBody"></div>
+    <button id="nextBtn" type="button" class="primary"></button>
+  </section>
+</main>
+
+<div id="trap" hidden></div>
+<div id="fx" aria-hidden="true">
+  <svg viewBox="0 0 120 120" width="132" height="132">
+    <circle class="fx-dot" cx="60" cy="60" r="9"/>
+    <circle class="fx-ring" cx="60" cy="60" r="40" pathLength="100"/>
+    <g class="fx-warn"><circle cx="60" cy="60" r="50" fill="rgba(0,0,0,.45)"/>
+      <path d="M60 28 L93 86 L27 86 Z" fill="rgba(255,205,60,.30)" stroke="#ffd84d" stroke-width="7" stroke-linejoin="round"/>
+      <path d="M60 47 L60 67" stroke="#ffe27a" stroke-width="6" stroke-linecap="round"/><circle cx="60" cy="77" r="3.6" fill="#ffe27a"/></g>
+  </svg>
+</div>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><filter id="glitchF" x="-5%" y="-5%" width="110%" height="110%"><feTurbulence id="glTurb" type="fractalNoise" baseFrequency="0 0.05" numOctaves="1" result="n"/><feDisplacementMap id="glDisp" in="SourceGraphic" in2="n" scale="0" xChannelSelector="R" yChannelSelector="G"/></filter></svg>
+
+<div id="virus" hidden>
+  <canvas id="noise" hidden></canvas>
+  <div class="vscan"></div>
+  <div class="nosig">SIGNAL LOST</div>
+  <div id="vterm" hidden>
+    <div class="vt-win"><span>security_monitor.exe</span><span>—　□　×</span></div>
+    <div class="vt-body">
+    <div class="vt-title"><small>UNAUTHORIZED PROCESS DETECTED</small><b>ウイルスが侵入しました</b></div>
+    <pre id="vlog"></pre>
+    <div class="vt-bar"><i id="vbar"></i></div>
+    <div class="vt-meta"><span>DATA TRANSFER</span><span id="vpct">0%</span></div>
+    </div>
+  </div>
+</div>
+
+<div id="fired" hidden>
+  <article class="paper">
+    <p class="p-date" id="firedDate"></p>
+    <h1>解雇通知書</h1>
+    <p class="p-to"><span>調査員</span>様</p>
+    <p class="p-body">当社は、貴殿との雇用契約を以下の通り終了させていただくことをここに通知いたします。</p>
+    <p class="p-ki">記</p>
+    <ol class="p-list">
+      <li><b>解雇日：</b><span id="firedDay"></span></li>
+      <li><b>解雇理由：</b>ウイルス感染による情報漏洩が行われたため、解雇処分といたしました。</li>
+      <li><b>備考：</b>貸与されたIDカードおよび端末は、本日中に返却してください。</li>
+    </ol>
+    <p class="p-end">以上</p>
+    <p class="p-sign">株式会社○○○○<br>代表取締役　○○　○○　<span class="seal">印</span></p>
+  </article>
+  <p class="f-label">MISSION FAILED ／ 任務失敗</p>
+  <div id="firedBtns" hidden>
+    <button id="retryBtn" type="button" class="primary dark">この事件をやり直す</button>
+    <button id="homeBtn" type="button" class="ghost dark">最初に戻る</button>
+  </div>
+</div>
+
+<div id="toast" role="status" aria-live="polite" hidden></div>
+<script src="debug.js"></script>
+<script src="cases.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

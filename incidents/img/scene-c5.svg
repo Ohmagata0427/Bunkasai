@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 440" preserveAspectRatio="none">
+<defs><filter id="sh" x="-5%" y="-5%" width="110%" height="112%"><feGaussianBlur stdDeviation="3"/></filter></defs>
+<rect width="1000" height="440" fill="#e9edf2"/>
+<rect width="1000" height="30" fill="#dfe4eb"/><rect y="30" width="1000" height="1" fill="#c3cad4"/>
+<circle cx="18" cy="15" r="5" fill="#ec6a5e"/>
+<circle cx="36" cy="15" r="5" fill="#f4bf4f"/>
+<circle cx="54" cy="15" r="5" fill="#61c554"/>
+<text x="500" y="19" font-family="Yu Gothic UI,Meiryo UI,Hiragino Sans,Noto Sans CJK JP,sans-serif" font-size="11" fill="#555" text-anchor="middle">AUDIT LOG　監査ログ・コンプライアンス管理</text>
+<rect y="31" width="1000" height="22" fill="#f7f8fa"/><text x="16" y="46" font-family="Yu Gothic UI,Meiryo UI,Hiragino Sans,Noto Sans CJK JP,sans-serif" font-size="10" fill="#6a7482">ヘルプデスク　›　問い合わせ対応　›　10月15日</text><rect x="860" y="35" width="124" height="14" rx="7" fill="#e7ebf0"/><text x="872" y="45" font-family="Yu Gothic UI,Meiryo UI,Hiragino Sans,Noto Sans CJK JP,sans-serif" font-size="8.5" fill="#8a94a2">検索</text>
+<rect x="17" y="62" width="324" height="170" rx="4" fill="#000" opacity=".12" filter="url(#sh)"/><rect x="16" y="60" width="324" height="170" rx="4" fill="#fff" stroke="#cdd3dc"/>
+<text x="28" y="80" font-family="Yu Gothic UI,Meiryo UI,Hiragino Sans,Noto Sans CJK JP,sans-serif" font-size="12" font-weight="700" fill="#2a3340">通話記録</text><rect x="16" y="88" width="324" height="1" fill="#e2e6ec"/>
+<circle cx="34" cy="106" r="9" fill="#cfd6e0"/><rect x="50" y="98" width="130" height="22" rx="8" fill="#eef1f5"/><rect x="60" y="106" width="96" height="5" rx="2" fill="#aeb8c6"/>
+<circle cx="322" cy="138" r="9" fill="#cfd6e0"/><rect x="120" y="130" width="164" height="22" rx="8" fill="#dfeafa"/><rect x="130" y="138" width="96" height="5" rx="2" fill="#aeb8c6"/>
+<circle cx="34" cy="170" r="9" fill="#cfd6e0"/><rect x="50" y="162" width="160" height="22" rx="8" fill="#eef1f5"/><rect x="60" y="170" width="88" height="5" rx="2" fill="#aeb8c6"/>
+<circle cx="322" cy="202" r="9" fill="#cfd6e0"/><rect x="120" y="194" width="150" height="22" rx="8" fill="#dfeafa"/><rect x="130" y="202" width="83" height="5" rx="2" fill="#aeb8c6"/>
+<rect x="353" y="62" width="324" height="170" rx="4" fill="#000" opacity=".12" filter="url(#sh)"/><rect x="352" y="60" width="324" height="170" rx="4" fill="#fff" stroke="#cdd3dc"/>
+<text x="364" y="80" font-family="Yu Gothic UI,Meiryo UI,Hiragino Sans,Noto Sans CJK JP,sans-serif" font-size="12" font-weight="700" fill="#2a3340">本人確認手順書</text><rect x="352" y="88" width="324" height="1" fill="#e2e6ec"/>
+<rect x="624" y="68" width="40" height="14" rx="3" fill="none" stroke="#4b7bbf"/><text x="644" y="78.5" font-family="Yu Gothic UI,Meiryo UI,Hiragino Sans,Noto Sans CJK JP,sans-serif" font-size="8.5" fill="#4b7bbf" text-anchor="middle">参照</text>
+<text x="366" y="106" font-family="Cascadia Mono,Consolas,Menlo,monospace" font-size="9" fill="#8a94a2">1.</text><rect x="386" y="99" width="260" height="5" rx="2" fill="#b4becb"/><rect x="386" y="109" width="165" height="5" rx="2" fill="#d3d9e1"/>
+<text x="366" y="131" font-family="Cascadia Mono,Consolas,Menlo,monospace" font-size="9" fill="#8a94a2">2.</text><rect x="386" y="124" width="223" height="5" rx="2" fill="#b4becb"/><rect x="386" y="134" width="164" height="5" rx="2" fill="#d3d9e1"/>
+<text x="366" y="156" font-family="Cascadia Mono,Consolas,Menlo,monospace" font-size="9" fill="#8a94a2">3.</text><rect x="386" y="149" width="267" height="5" rx="2" fill="#b4becb"/><rect x="386" y="159" width="130" height="5" rx="2" fill="#d3d9e1"/>
+<text x="366" y="181" font-family="Cascadia Mono,Consolas,Menlo,monospace" font-size="9" fill="#8a94a2">4.</text><rect x="386" y="174" width="200" height="5" rx="2" fill="#b4becb"/><rect x="386" y="184" width="101" height="5" rx="2" fill="#d3d9e1"/>
+<text x="366" y="206" font-family="Cascadia Mono,Consolas,Menlo,monospace" font-size="9" fill="#8a94a2">5.</text><rect x="386" y="199" width="247" height="5" rx="2" fill="#b4becb"/><rect x="386" y="209" width="174" height="5" rx="2" fill="#d3d9e1"/>
+<rect x="689" y="62" width="296" height="170" rx="4" fill="#000" opacity=".12" filter="url(#sh)"/><rect x="688" y="60" width="296" height="170" rx="4" fill="#fff" stroke="#cdd3dc"/>
+<text x="700" y="80" font-family="Yu Gothic UI,Meiryo UI,Hiragino Sans,Noto Sans CJK JP,sans-serif" font-size="12" font-weight="700" fill="#2a3340">社員プロフィール（公開情報）</text><rect x="688" y="88" width="296" height="1" fill="#e2e6ec"/>
+<circle cx="722" cy="118" r="20" fill="#cfd6e0"/><circle cx="722" cy="112" r="7" fill="#aeb8c6"/><path d="M708 132 q14 -14 28 0" fill="#aeb8c6"/>
+<rect x="756" y="100" width="134" height="5" rx="2" fill="#aeb8c6"/>
+<rect x="756" y="120" width="88" height="5" rx="2" fill="#d3d9e1"/>
+<rect x="756" y="140" width="98" height="5" rx="2" fill="#d3d9e1"/>
+<rect x="756" y="160" width="109" height="5" rx="2" fill="#d3d9e1"/>
+<rect x="756" y="180" width="109" height="5" rx="2" fill="#d3d9e1"/>
+<rect x="704" y="156" width="264" height="1" fill="#e2e6ec"/>
+<rect x="704" y="168" width="238" height="5" rx="2" fill="#d3d9e1"/>
+<rect x="704" y="186" width="155" height="5" rx="2" fill="#d3d9e1"/>
+<rect x="704" y="204" width="205" height="5" rx="2" fill="#d3d9e1"/>
+<rect x="17" y="246" width="968" height="180" rx="4" fill="#000" opacity=".12" filter="url(#sh)"/><rect x="16" y="244" width="968" height="180" rx="4" fill="#fff" stroke="#cdd3dc"/>
+<text x="28" y="264" font-family="Yu Gothic UI,Meiryo UI,Hiragino Sans,Noto Sans CJK JP,sans-serif" font-size="12" font-weight="700" fill="#2a3340">監査ログ</text><rect x="16" y="272" width="968" height="1" fill="#e2e6ec"/>
+<text x="30" y="288" font-family="Yu Gothic UI,Meiryo UI,Hiragino Sans,Noto Sans CJK JP,sans-serif" font-size="9" fill="#7a8494">日時</text>
+<text x="170" y="288" font-family="Yu Gothic UI,Meiryo UI,Hiragino Sans,Noto Sans CJK JP,sans-serif" font-size="9" fill="#7a8494">操作</text>
+<text x="420" y="288" font-family="Yu Gothic UI,Meiryo UI,Hiragino Sans,Noto Sans CJK JP,sans-serif" font-size="9" fill="#7a8494">対象ユーザー</text>
+<text x="600" y="288" font-family="Yu Gothic UI,Meiryo UI,Hiragino Sans,Noto Sans CJK JP,sans-serif" font-size="9" fill="#7a8494">実行者</text>
+<text x="760" y="288" font-family="Yu Gothic UI,Meiryo UI,Hiragino Sans,Noto Sans CJK JP,sans-serif" font-size="9" fill="#7a8494">結果</text>
+<rect x="24" y="310" width="952" height="1" fill="#eaeef2"/><text x="30" y="306" font-family="Cascadia Mono,Consolas,Menlo,monospace" font-size="9" fill="#6a7482">10-15 14:39</text><rect x="170" y="300" width="156" height="5" rx="2" fill="#b4becb"/><rect x="420" y="300" width="62" height="5" rx="2" fill="#c3ccd8"/><rect x="600" y="300" width="81" height="5" rx="2" fill="#c3ccd8"/><rect x="760" y="299" width="34" height="10" rx="3" fill="#dde9dd"/>
+<rect x="24" y="331" width="952" height="1" fill="#eaeef2"/><text x="30" y="327" font-family="Cascadia Mono,Consolas,Menlo,monospace" font-size="9" fill="#6a7482">10-15 14:44</text><rect x="170" y="321" width="114" height="5" rx="2" fill="#b4becb"/><rect x="420" y="321" width="83" height="5" rx="2" fill="#c3ccd8"/><rect x="600" y="321" width="61" height="5" rx="2" fill="#c3ccd8"/><rect x="760" y="320" width="34" height="10" rx="3" fill="#dde9dd"/>
+<rect x="24" y="352" width="952" height="1" fill="#eaeef2"/><text x="30" y="348" font-family="Cascadia Mono,Consolas,Menlo,monospace" font-size="9" fill="#6a7482">10-15 14:47</text><rect x="170" y="342" width="111" height="5" rx="2" fill="#b4becb"/><rect x="420" y="342" width="67" height="5" rx="2" fill="#c3ccd8"/><rect x="600" y="342" width="61" height="5" rx="2" fill="#c3ccd8"/><rect x="760" y="341" width="34" height="10" rx="3" fill="#dde9dd"/>
+<rect x="24" y="373" width="952" height="1" fill="#eaeef2"/><text x="30" y="369" font-family="Cascadia Mono,Consolas,Menlo,monospace" font-size="9" fill="#6a7482">10-15 14:10</text><rect x="170" y="363" width="170" height="5" rx="2" fill="#b4becb"/><rect x="420" y="363" width="81" height="5" rx="2" fill="#c3ccd8"/><rect x="600" y="363" width="85" height="5" rx="2" fill="#c3ccd8"/><rect x="760" y="362" width="34" height="10" rx="3" fill="#dde9dd"/>
+<rect x="24" y="394" width="952" height="1" fill="#eaeef2"/><text x="30" y="390" font-family="Cascadia Mono,Consolas,Menlo,monospace" font-size="9" fill="#6a7482">10-15 14:09</text><rect x="170" y="384" width="123" height="5" rx="2" fill="#b4becb"/><rect x="420" y="384" width="62" height="5" rx="2" fill="#c3ccd8"/><rect x="600" y="384" width="90" height="5" rx="2" fill="#c3ccd8"/><rect x="760" y="383" width="34" height="10" rx="3" fill="#dde9dd"/>
+<rect x="24" y="415" width="952" height="1" fill="#eaeef2"/><text x="30" y="411" font-family="Cascadia Mono,Consolas,Menlo,monospace" font-size="9" fill="#6a7482">10-15 14:04</text><rect x="170" y="405" width="125" height="5" rx="2" fill="#b4becb"/><rect x="420" y="405" width="73" height="5" rx="2" fill="#c3ccd8"/><rect x="600" y="405" width="103" height="5" rx="2" fill="#c3ccd8"/><rect x="760" y="404" width="34" height="10" rx="3" fill="#dde9dd"/>
+</svg>
