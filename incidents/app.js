@@ -100,6 +100,29 @@
     Object.values(SND).forEach(a => { a.muted = true; const p = a.play(); const done = () => { a.pause(); a.currentTime = 0; a.muted = false; }; if (p && p.then) p.then(done, () => { a.muted = false; unlocked = false; }); else done(); });
   }
   ["pointerdown", "keydown", "touchstart"].forEach(ev => document.addEventListener(ev, unlockAudio, { capture: true, passive: true }));
+  // ---- BGM ----
+let bgmAudio = null;
+
+function startBGM() {
+  if (!soundOn) return;
+  if (bgmAudio && !bgmAudio.paused) return;
+
+  if (!bgmAudio) {
+    bgmAudio = new Audio("sounds/bgm.mp3");
+    bgmAudio.loop = true;
+    bgmAudio.volume = 0.25;
+  }
+
+  bgmAudio.play().catch(error => {
+    console.warn("BGMの再生に失敗しました:", error);
+  });
+}
+
+function stopBGM() {
+  if (!bgmAudio) return;
+  bgmAudio.pause();
+  bgmAudio.currentTime = 0;
+}
   function play(name, opt) {
     if (!soundOn || !SND[name]) return null; opt = opt || {};
     const a = opt.clone ? SND[name].cloneNode(true) : SND[name];
@@ -111,9 +134,17 @@
     let v = a.volume; const step = v / 5, iv = setInterval(() => { v -= step; if (v <= 0.02) { clearInterval(iv); a.pause(); try { a.currentTime = 0; } catch (e) {} a.volume = 1; } else a.volume = v; }, ms / 5);
   }
   $("soundBtn").addEventListener("click", () => {
-    soundOn = !soundOn; $("soundBtn").textContent = "音：" + (soundOn ? "ON" : "OFF"); $("soundBtn").setAttribute("aria-pressed", String(soundOn));
-    if (!soundOn) Object.values(SND).forEach(a => a.pause());
-  });
+  soundOn = !soundOn;
+  $("soundBtn").textContent = "音：" + (soundOn ? "ON" : "OFF");
+  $("soundBtn").setAttribute("aria-pressed", String(soundOn));
+
+  if (!soundOn) {
+    Object.values(SND).forEach(a => a.pause());
+    stopBGM();
+  } else if (state !== "start") {
+    startBGM();
+  }
+});
 
   // ---- 報告の演出（点→円が広がり一周→警告アイコン）----
   const FX = (() => {
@@ -445,8 +476,15 @@
     if (ci >= C.length) { ci = 0; total = { B: 0, A: 0, S: 0, T: 0 }; show("start"); } else next();
   });
   function begin(h) { hard = h; $("introMaxW").textContent = maxW() + "回目で任務失敗"; ci = 0; total = { B: 0, A: 0, S: 0, T: 0 }; show("intro"); }
-  $("startBtn").addEventListener("click", () => begin(false));
-  $("startHardBtn").addEventListener("click", () => begin(true));
+$("startBtn").addEventListener("click", () => {
+  begin(false);
+  startBGM();
+});
+
+$("startHardBtn").addEventListener("click", () => {
+  begin(true);
+  startBGM();
+});
   $("rankSubmit").addEventListener("click", submitRank);
   $("introBtn").addEventListener("click", startCase);
   $("retryBtn").addEventListener("click", startCase);
