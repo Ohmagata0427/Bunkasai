@@ -8,7 +8,7 @@
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
-<div id="titlebar"><span class="tb-icon"></span><span id="tbTitle">INCIDENTS — 調査端末</span><button id="soundBtn" type="button" class="tb-sound" aria-pressed="true">音：ON</button><span class="tb-ctl" aria-hidden="true"><i>—</i><i>□</i><i>×</i></span></div>
+<div id="titlebar"><span class="tb-icon"></span><span id="tbTitle">INCIDENTS — 調査端末</span><button id="retireBtn" type="button" class="tb-btn" hidden>リタイア</button><button id="titleBtn" type="button" class="tb-btn" hidden>タイトルへ</button><button id="soundBtn" type="button" class="tb-sound" aria-pressed="true">音：ON</button><span class="tb-ctl" aria-hidden="true"><i>—</i><i>□</i><i>×</i></span></div>
 <header id="bar" hidden>
   <span id="caseTitle"></span>
   <span>経過 <b id="time">0</b>秒</span>
@@ -30,7 +30,7 @@
           <button id="startBtn" type="button" class="primary">調査を始める</button>
           <button id="startHardBtn" type="button" class="hardbtn">ハードモードで始める</button>
         </div>
-        <p class="modenote">ハードモード：誤報告は3回で任務失敗／問題点を見つけたあと、深刻度の順に並べ替える／現場調査の選択肢にダミーが混ざる／スコア1.5倍</p>
+        <p class="modenote">ハードモード：誤報告は3回で任務失敗／問題点を見つけたあと、深刻度の順に並べ替える／最終調査の選択肢にダミーが混ざる／スコア1.5倍</p>
       </div>
     </div>
     <div class="board" id="startBoard"></div>
@@ -73,15 +73,18 @@
 
   <section id="arg" hidden>
     <div id="argFinal">
-      <h2>現場調査：最終問題</h2>
-      <p id="argIntro"></p>
-      <p>教室内で確認した事象と、そこから生じる危険性を正しく対応させてください。</p>
+      <div id="argNotice" class="final-notice" role="note">
+        <p class="fn-label mono">FINAL INVESTIGATION</p>
+        <p id="argNoticeText"></p>
+      </div>
+      <h2>最終調査：残された記録</h2>
+      <div id="argEvidence" class="evidence"></div>
+      <p>証拠資料を読み、そこから分かる事象と、その危険性を正しく対応させてください。</p>
       <p class="small">空欄をタップしてから、下の選択肢をタップして入れてください。入れた選択肢は、もう一度タップすると戻せます。</p>
       <div id="argQuestions" class="arg-questions"></div>
       <div id="argBank" class="arg-choicebank card"></div>
       <p id="argFinalMsg" role="status" aria-live="polite"></p>
       <button id="argFinalSubmit" type="button" class="primary">回答する</button>
-      <div><button id="skipBtn" type="button" class="skip"></button></div>
     </div>
   </section>
 

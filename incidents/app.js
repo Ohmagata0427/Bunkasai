@@ -6,10 +6,18 @@
   const HARD_MULT = 1.5, RANK_PENALTY = 10; // ハード：スコア倍率／並べ替えを間違えるたびの減点
   const REDUCED = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
   const $ = id => document.getElementById(id);
+  // このファイル内の setTimeout / setInterval / requestAnimationFrame を追跡する。
+  // 「タイトルへ」「リタイア」の瞬間に、失敗演出などの動作中の処理をすべて止めるため（止めないと、戻った後に解雇通知書が出てしまう）。
+  const TIMERS = new Set(), RAFS = new Set();
+  function setTimeout(fn, ms, ...a) { const id = window.setTimeout(() => { TIMERS.delete(id); fn(...a); }, ms); TIMERS.add(id); return id; }
+  function setInterval(fn, ms, ...a) { const id = window.setInterval(fn, ms, ...a); TIMERS.add(id); return id; }
+  function requestAnimationFrame(fn) { const id = window.requestAnimationFrame(t => { RAFS.delete(id); fn(t); }); RAFS.add(id); return id; }
+  function cancelAllTimers() { TIMERS.forEach(id => { window.clearTimeout(id); window.clearInterval(id); }); TIMERS.clear(); RAFS.forEach(id => window.cancelAnimationFrame(id)); RAFS.clear(); }
   const C = window.CASES;
   let ci = 0, found = new Set(), rejected = new Set(), done = false, W = 0, t0 = 0, tick = null;
+  const newTotal = () => ({ B: 0, A: 0, S: 0, T: 0, R: 0 }); // B=特定／A=誤報告なし／S=スコア／T=時間／R=リタイア
   let rankMiss = 0, rankOrder = [];
-  let state = "start", curDoc = null, total = { B: 0, A: 0, S: 0, T: 0 }, toastT = null;
+  let state = "start", curDoc = null, total = newTotal(), toastT = null;
 
   function show(n) {
     state = n;
@@ -20,6 +28,9 @@
     $("tbTitle").textContent = "INCIDENTS — 調査端末";
     $("bar").hidden = !(n === "office" || n === "doc");
     $("backBtn").hidden = n !== "doc";
+    $("titleBtn").hidden = n === "start";                                          // タイトルへ：開始画面以外ではいつでも
+    $("retireBtn").hidden = !["office", "doc", "rank", "arg"].includes(n);         // リタイア：事件に取り組んでいる間
+    disarmTb(); document.body.classList.toggle("onfail", n === "fired");           // 失敗演出の最中も、タイトルバーを最前面に出す
     if (n === "start") drawBoard($("startBoard"), { mode: "normal", clear: true });
     window.scrollTo(0, 0);
   }
@@ -36,6 +47,7 @@
   }
 
   function startCase() {
+    resetFlow();
     const c = C[ci];
     if (c.type === "arg") return startArg(c);
     found = new Set(); rejected = new Set(); done = false; W = 0; rankMiss = 0; t0 = Date.now();
@@ -95,6 +107,29 @@
   // ---- 効果音（sounds/ のmp3。file://でも動くようHTMLAudioで再生）----
   const SND_FILES = { noise: "sounds/sfx-noise.mp3", hold: "sounds/sfx-hold.mp3", pee: "sounds/sfx-pee.mp3", open: "sounds/sfx-open.mp3", ok: "sounds/sfx-ok.mp3", ng: "sounds/sfx-ng.mp3" };
   const SND = {}; let soundOn = true, unlocked = false, noiseSnd = null, peeSnd = null;
+// ---- BGM ----
+let bgmAudio = null;
+
+function startBGM() {
+  if (!soundOn) return;
+  if (bgmAudio && !bgmAudio.paused) return;
+
+  if (!bgmAudio) {
+    bgmAudio = new Audio("sounds/bgm.mp3");
+    bgmAudio.loop = true;
+    bgmAudio.volume = 0.25;
+  }
+
+  bgmAudio.play().catch(error => {
+    console.warn("BGMの再生に失敗しました:", error);
+  });
+}
+
+function stopBGM() {
+  if (!bgmAudio) return;
+  bgmAudio.pause();
+  bgmAudio.currentTime = 0;
+}
   Object.keys(SND_FILES).forEach(k => { const a = new Audio(SND_FILES[k]); a.preload = "auto"; SND[k] = a; });
   function unlockAudio() { // 最初の操作で一度だけ、無音で再生→停止して再生許可を得る（iOS対策）
     if (unlocked) return; unlocked = true;
@@ -111,10 +146,18 @@
     if (!a) return; if (!ms) { a.pause(); try { a.currentTime = 0; } catch (e) {} return; }
     let v = a.volume; const step = v / 5, iv = setInterval(() => { v -= step; if (v <= 0.02) { clearInterval(iv); a.pause(); try { a.currentTime = 0; } catch (e) {} a.volume = 1; } else a.volume = v; }, ms / 5);
   }
-  $("soundBtn").addEventListener("click", () => {
-    soundOn = !soundOn; $("soundBtn").textContent = "音：" + (soundOn ? "ON" : "OFF"); $("soundBtn").setAttribute("aria-pressed", String(soundOn));
-    if (!soundOn) Object.values(SND).forEach(a => a.pause());
-  });
+$("soundBtn").addEventListener("click", () => {
+  soundOn = !soundOn;
+  $("soundBtn").textContent = "音：" + (soundOn ? "ON" : "OFF");
+  $("soundBtn").setAttribute("aria-pressed", String(soundOn));
+
+  if (!soundOn) {
+    Object.values(SND).forEach(a => a.pause());
+    stopBGM();
+  } else if (state !== "start") {
+    startBGM();
+  }
+});
 
   // ---- 報告の演出（点→円が広がり一周→警告アイコン）----
   const FX = (() => {
@@ -176,7 +219,7 @@
     ["確認", "本当に閉じますか？"], ["エラー", "応答がありません"], ["警告", "ファイルが暗号化されています"], ["セキュリティ", "不正アクセスを検知しました"], ["ウイルス警告", "今すぐ削除してください"]];
   function trapPopups() {
     if (done) return;
-    done = true; clearInterval(tick); state = "virus"; $("toast").hidden = true; $("tbTitle").textContent = "INCIDENTS — 応答なし";
+    done = true; document.body.classList.add("onfail"); clearInterval(tick); state = "virus"; $("toast").hidden = true; $("tbTitle").textContent = "INCIDENTS — 応答なし";
     const layer = $("trap"); layer.textContent = ""; layer.hidden = false; window.__log && __log("TRAP fired");
     const add = i => {
       play("open", { clone: true, vol: 0.85 });
@@ -192,7 +235,7 @@
   }
 
   function failMission() {
-    done = true; clearInterval(tick); state = "virus"; $("toast").hidden = true;
+    done = true; document.body.classList.add("onfail"); clearInterval(tick); state = "virus"; $("toast").hidden = true;
     const v = $("virus");
     setTimeout(() => { $("tbTitle").textContent = "INCIDENTS — 応答なし"; v.hidden = false; v.className = ""; requestAnimationFrame(() => v.classList.add("on")); glitch(900); }, 700);
     setTimeout(() => { play("open"); runTerminal(2300); }, 1600);
@@ -313,16 +356,8 @@
     $("rankMsg").textContent = "順序が正しくありません。実際に起きた可能性を示す記録ほど、上に置いてください。（誤り " + rankMiss + " 回・1回につき " + RANK_PENALTY + " 点減点）";
   }
 
-  function success(c) {
-    clearInterval(tick);
-    const T = elapsed(), perfect = W === 0;
-    const base = Math.max(0, 100 + (perfect ? 50 : 0) - 2 * T - 20 * W); // 暫定式
-    const S = hard ? Math.max(0, Math.round(base * HARD_MULT) - RANK_PENALTY * rankMiss) : base;
-    total.B++; total.A += perfect ? 1 : 0; total.S += S; total.T += T;
-    $("resTitle").textContent = "";
-    const r = $("resBody"); r.textContent = "";
-    const h = document.createElement("div"); h.className = "break"; h.textContent = "特定（IDENTIFIED）"; r.appendChild(h);
-    r.appendChild(stats((hard ? [["モード", "HARD"]] : []).concat([["経過", T + "秒"], ["誤報告", W + "件"]], hard ? [["並べ替えの誤り", rankMiss + "回"]] : [], [["今回のスコア", S], ["累計", total.S]])));
+  // 事件の解説（特定した問題点・種類・出典）。成功時とリタイア時の両方で使う
+  function renderExplain(r, c) {
     if (c.kinds && c.detail) renderFindings(r, c);
     else {
       const card = document.createElement("div"); card.className = "card";
@@ -336,19 +371,37 @@
       const s = document.createElement("p"); s.className = "small"; s.textContent = "出典・注記：" + c.source; card.appendChild(s);
       r.appendChild(card);
     }
+  }
+
+  function success(c) {
+    clearInterval(tick);
+    const T = elapsed(), perfect = W === 0;
+    const base = Math.max(0, 100 + (perfect ? 50 : 0) - 2 * T - 20 * W); // 暫定式
+    const S = hard ? Math.max(0, Math.round(base * HARD_MULT) - RANK_PENALTY * rankMiss) : base;
+    total.B++; total.A += perfect ? 1 : 0; total.S += S; total.T += T;
+    $("resTitle").textContent = "";
+    const r = $("resBody"); r.textContent = "";
+    const h = document.createElement("div"); h.className = "break"; h.textContent = "特定（IDENTIFIED）"; r.appendChild(h);
+    r.appendChild(stats((hard ? [["モード", "HARD"]] : []).concat([["経過", T + "秒"], ["誤報告", W + "件"]], hard ? [["並べ替えの誤り", rankMiss + "回"]] : [], [["今回のスコア", S], ["累計", total.S]])));
+    renderExplain(r, c);
     const last = ci === C.length - 1;
     $("nextBtn").textContent = last ? "最終結果へ" : "次の事件へ";
     show("result");
   }
 
-  // ---- 現場調査（ARG）ステージ ----
-  let skipAsk = false, skipT = null;
+  // ---- 最終調査（残された記録）ステージ ----
   function startArg(c) {
-    clearInterval(tick); roomT.forEach(clearTimeout); skipAsk = false;
-    $("argIntro").textContent = c.intro;
-    $("skipBtn").textContent = "スキップ（Webだけで進める）";
-    show("arg"); showArgFinal();   // 確認コードは廃止。開始と同時に最終問題（穴埋め）へ
+    clearInterval(tick); roomT.forEach(clearTimeout);
+    $("argNoticeText").textContent = c.intro;
+    const ev = $("argEvidence"); ev.textContent = "";
+    (c.evidence || []).forEach(e => {
+      const card = el("article", "evcard"), head = el("div", "ev-head");
+      head.append(el("span", "ev-no mono", "証拠資料 " + e.no), el("span", "ev-title", e.title));
+      card.append(head, el("p", "ev-meta mono", e.meta), el("p", "ev-text", e.text)); ev.appendChild(card);
+    });
+    show("arg"); showArgFinal();   // 現場（教室）は使えない設定。残された証拠資料を読んで、穴埋めに答える
   }
+
   // 穴埋め：空欄（スロット）をタップ→選択肢（チップ）をタップで入れる。入れたものは再タップで戻せる。
   const BLANK = "＿＿＿＿＿＿＿＿";
   let clozeActive = null;
@@ -401,37 +454,73 @@
       if (!hard) { row.classList.toggle("ok", good); row.classList.toggle("ng", !good); } // ハードは行ごとの正誤を見せない
     });
     if (ok < rows.length) {
-      $("argFinalMsg").textContent = hard ? "対応が正しくありません。教室で確認した事象と、その危険性を見直してください。"
+      $("argFinalMsg").textContent = hard ? "対応が正しくありません。証拠資料から分かる事象と、その危険性を見直してください。"
         : ok + " / " + rows.length + " 組が正しい対応です。色が赤い行を見直してください。";
       return;
     }
-    $("argFinalMsg").textContent = "正解です。現場調査を完了しました。";
+    $("argFinalMsg").textContent = "すべての証拠を照合しました。";
     argDone(c, false);
   }
-  function skipCase() {
-    if (!skipAsk) {
-      skipAsk = true; $("skipBtn").textContent = "本当にスキップしますか？ もう一度押すと確定";
-      clearTimeout(skipT); skipT = setTimeout(() => { skipAsk = false; $("skipBtn").textContent = "スキップ（Webだけで進める）"; }, 4000);
-      return;
-    }
-    argDone(C[ci], true);
-  }
-  function argDone(c, skipped) {
-    total.arg = skipped ? "SKIP" : "CLEAR";
-    const S = skipped ? 0 : Math.round(c.final.rows.length * 50 * (hard ? HARD_MULT : 1)); total.S += S;
+  // 最終調査の終了画面。retired=true のときはリタイア（得点なし）
+  function argDone(c, retired) {
+    total.arg = retired ? "RETIRE" : "CLEAR";
+    const S = retired ? 0 : Math.round(c.final.rows.length * 50 * (hard ? HARD_MULT : 1)); total.S += S;
     const r = $("resBody"); r.textContent = "";
-    const h = document.createElement("div"); h.className = "break"; h.textContent = skipped ? "SKIP" : "FIELD CLEAR"; r.appendChild(h);
-    const card = document.createElement("div"); card.className = "card";
-    if (skipped) {
-      const p = document.createElement("p"); p.textContent = "現場調査はスキップされました。得点はありません。"; card.appendChild(p);
-    } else {
-      r.appendChild(stats((hard ? [["モード", "HARD"]] : []).concat([["正解", c.final.rows.length + "組"], ["今回のスコア", S], ["累計", total.S]])));
-      const p = document.createElement("p"); p.textContent = c.notice; card.appendChild(p);
+    const h = el("div", "break" + (retired ? " retire" : ""), retired ? "リタイア（RETIRE）" : "INVESTIGATION COMPLETED"); r.appendChild(h);
+    const card = el("div", "card");
+    if (retired) card.appendChild(el("p", null, "最終調査はリタイアしました。得点はありません。残された記録の照合結果を確認しておきましょう。"));
+    else {
+      r.appendChild(stats((hard ? [["モード", "HARD"]] : []).concat([["照合", c.final.rows.length + "件"], ["今回のスコア", S], ["累計", total.S]])));
+      card.appendChild(el("p", null, c.notice)); card.appendChild(el("div", "fclear mono", "FIELD CLEAR"));
     }
     r.appendChild(card);
+    const res = el("div", "card"); res.appendChild(el("h3", null, "照合結果"));
+    c.final.rows.forEach(x => { const p = el("p"); p.append(Object.assign(el("b"), { textContent: "証拠資料 " + x.ev + "：" }), x.incident + "。 → 危険性：" + x.risk); res.appendChild(p); });
+    r.appendChild(res);
+    r.appendChild(el("p", "small", "出典・注記：" + c.source));
     $("nextBtn").textContent = ci === C.length - 1 ? "最終結果へ" : "次の事件へ";
     show("result");
   }
+
+
+  // ---- タイトルへ戻る／リタイア（どちらも、押し間違い防止のため2回押しで確定）----
+  const disarms = [];
+  function disarmTb() { disarms.forEach(f => f()); }
+  function twoStep(btn, idle, ask, act) {
+    let armed = false, t = null;
+    const disarm = () => { armed = false; clearTimeout(t); btn.textContent = idle; btn.classList.remove("armed"); };
+    disarms.push(disarm);
+    btn.addEventListener("click", () => {
+      if (!armed) { armed = true; btn.textContent = ask; btn.classList.add("armed"); t = window.setTimeout(disarm, 4000); return; }
+      disarm(); act();
+    });
+  }
+  // 動作中の演出・音・表示をすべて止める
+  function resetFlow() {
+    cancelAllTimers(); clearInterval(tick); roomT = [];
+    Object.values(SND).forEach(a => { try { a.pause(); a.currentTime = 0; } catch (e) {} a.volume = 1; }); noiseSnd = null; peeSnd = null;
+    FX.cancel(); done = false;
+    const v = $("virus"); v.hidden = true; v.className = ""; $("noise").hidden = true; $("vterm").hidden = true;
+    [$("bar"), document.querySelector("main")].forEach(e => e.classList.remove("glitching", "lite")); $("glDisp").setAttribute("scale", "0");
+    $("trap").hidden = true; $("trap").textContent = ""; $("fired").hidden = true; $("firedBtns").hidden = true;
+    $("toast").hidden = true; hideCutIn(); document.body.classList.remove("onfail"); $("tbTitle").textContent = "INCIDENTS — 調査端末";
+  }
+  function goTitle() { resetFlow(); ci = 0; total = newTotal(); show("start"); }
+  function retireCase() {
+    const c = C[ci]; if (!c) return;
+    if (c.type === "arg") { resetFlow(); argDone(c, true); return; }
+    const T = elapsed(), nf = found.size, N = c.answer.length;
+    resetFlow(); total.R++; total.T += T;
+    const r = $("resBody"); r.textContent = "";
+    const h = document.createElement("div"); h.className = "break retire"; h.textContent = "リタイア（RETIRE）"; r.appendChild(h);
+    r.appendChild(stats((hard ? [["モード", "HARD"]] : []).concat([["経過", T + "秒"], ["発見", nf + " / " + N], ["誤報告", W + "件"], ["今回のスコア", 0], ["累計", total.S]])));
+    const note = document.createElement("div"); note.className = "card"; const p = document.createElement("p"); p.textContent = "この事件はリタイアしました。得点はありません。見つけられなかったものも含めて、正解を確認しておきましょう。"; note.appendChild(p); r.appendChild(note);
+    renderExplain(r, c);
+    $("nextBtn").textContent = ci === C.length - 1 ? "最終結果へ" : "次の事件へ";
+    show("result");
+  }
+  twoStep($("titleBtn"), "タイトルへ", "押すと戻る", goTitle);
+  twoStep($("retireBtn"), "リタイア", "押すと確定", retireCase);
 
   function stats(a) {
     const d = document.createElement("div"); d.className = "stat";
@@ -516,22 +605,29 @@
     if (ci < C.length - 1) { ci++; startCase(); return; }
     $("resBody").textContent = "";
     const h = document.createElement("div"); h.className = "break"; h.textContent = "REPORT"; $("resBody").appendChild(h);
-    $("resBody").appendChild(stats([["モード", hard ? "HARD" : "通常"], ["特定した事件", total.B + "/" + C.filter(x => x.type !== "arg").length], ["誤報告なしで特定", total.A], ["現場調査", total.arg || "-"], ["合計時間", total.T + "秒"], ["総スコア", total.S]]));
+    $("resBody").appendChild(stats([["モード", hard ? "HARD" : "通常"], ["特定した事件", total.B + "/" + C.filter(x => x.type !== "arg").length], ["誤報告なしで特定", total.A]].concat(total.R ? [["リタイア", total.R + "件"]] : []).concat([ ["最終調査", total.arg || "-"], ["合計時間", total.T + "秒"], ["総スコア", total.S]])));
     addRanking($("resBody"));
     $("nextBtn").textContent = "最初から";
     ci = C.length; // 最終画面マーク
   }
 
   $("nextBtn").addEventListener("click", () => {
-    if (ci >= C.length) { ci = 0; total = { B: 0, A: 0, S: 0, T: 0 }; show("start"); } else next();
+    if (ci >= C.length) { ci = 0; total = newTotal(); show("start"); } else next();
   });
-  function begin(h) { hard = h; $("introMaxW").textContent = maxW() + "回目で任務失敗"; ci = 0; total = { B: 0, A: 0, S: 0, T: 0 }; show("intro"); }
-  $("startBtn").addEventListener("click", () => begin(false));
-  $("startHardBtn").addEventListener("click", () => begin(true));
+  function begin(h) { hard = h; $("introMaxW").textContent = maxW() + "回目で任務失敗"; ci = 0; total = newTotal(); show("intro"); }
+$("startBtn").addEventListener("click", () => {
+  begin(false);
+  startBGM();
+});
+
+$("startHardBtn").addEventListener("click", () => {
+  begin(true);
+  startBGM();
+});
   $("rankSubmit").addEventListener("click", submitRank);
   $("introBtn").addEventListener("click", startCase);
   $("retryBtn").addEventListener("click", startCase);
-  $("homeBtn").addEventListener("click", () => { ci = 0; total = { B: 0, A: 0, S: 0, T: 0 }; show("start"); });
+  $("homeBtn").addEventListener("click", () => { ci = 0; total = newTotal(); show("start"); });
   $("backBtn").addEventListener("click", () => show("office"));
   document.addEventListener("keydown", e => {
     if (e.key !== "Enter" || e.repeat) return;
@@ -541,16 +637,17 @@
     else if (state === "result") { e.preventDefault(); $("nextBtn").click(); }
   });
   $("argFinalSubmit").addEventListener("click", submitArgFinal);
-  $("skipBtn").addEventListener("click", skipCase);
   window.__game = {
     get state() { return state; }, get ci() { return ci; }, get W() { return W; }, get found() { return [...found]; }, get cases() { return C.length; },
     answers: () => (C[ci] && C[ci].answer) || [],
-    goCase(i) { clearInterval(tick); ["virus", "fired", "noise"].forEach(id => { $(id).hidden = true; }); $("virus").className = ""; $("toast").hidden = true; done = false; total = { B: 0, A: 0, S: 0, T: 0 }; ci = i; startCase(); },
+    goCase(i) { clearInterval(tick); ["virus", "fired", "noise"].forEach(id => { $(id).hidden = true; }); $("virus").className = ""; $("toast").hidden = true; done = false; total = newTotal(); ci = i; startCase(); },
     get hard() { return hard; }, toggleHard() { hard = !hard; return hard; }, rank() { if (C[ci] && C[ci].answer && !done) { done = true; C[ci].answer.forEach(id => found.add(id)); hud(); rankable(C[ci]) ? startRank(C[ci]) : success(C[ci]); } },
     trap() { if (!done && state === "doc") trapPopups(); },
     wrong() { if (state === "doc" && !done) { W++; hud(); if (W >= maxW()) failMission(); else say("（デバッグ）誤報告 " + W + " / " + maxW()); } },
     fail() { if (!done) failMission(); },
     result() { if (C[ci] && C[ci].answer && !done) { done = true; C[ci].answer.forEach(id => found.add(id)); hud(); success(C[ci]); } }
   };
+document.getElementById("startBtn")
+    ?.addEventListener("click", startBGM);
   show("start");
 })();
