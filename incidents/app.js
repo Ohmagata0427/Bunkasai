@@ -94,7 +94,13 @@
   // ---- 効果音（sounds/ のmp3。file://でも動くようHTMLAudioで再生）----
   const SND_FILES = { noise: "sounds/sfx-noise.mp3", hold: "sounds/sfx-hold.mp3", pee: "sounds/sfx-pee.mp3", open: "sounds/sfx-open.mp3", ok: "sounds/sfx-ok.mp3", ng: "sounds/sfx-ng.mp3" };
   const SND = {}; let soundOn = true, unlocked = false, noiseSnd = null, peeSnd = null;
-// ---- BGM ----
+  Object.keys(SND_FILES).forEach(k => { const a = new Audio(SND_FILES[k]); a.preload = "auto"; SND[k] = a; });
+  function unlockAudio() { // 最初の操作で一度だけ、無音で再生→停止して再生許可を得る（iOS対策）
+    if (unlocked) return; unlocked = true;
+    Object.values(SND).forEach(a => { a.muted = true; const p = a.play(); const done = () => { a.pause(); a.currentTime = 0; a.muted = false; }; if (p && p.then) p.then(done, () => { a.muted = false; unlocked = false; }); else done(); });
+  }
+  ["pointerdown", "keydown", "touchstart"].forEach(ev => document.addEventListener(ev, unlockAudio, { capture: true, passive: true }));
+  // ---- BGM ----
 let bgmAudio = null;
 
 function startBGM() {
@@ -117,12 +123,6 @@ function stopBGM() {
   bgmAudio.pause();
   bgmAudio.currentTime = 0;
 }
-  Object.keys(SND_FILES).forEach(k => { const a = new Audio(SND_FILES[k]); a.preload = "auto"; SND[k] = a; });
-  function unlockAudio() { // 最初の操作で一度だけ、無音で再生→停止して再生許可を得る（iOS対策）
-    if (unlocked) return; unlocked = true;
-    Object.values(SND).forEach(a => { a.muted = true; const p = a.play(); const done = () => { a.pause(); a.currentTime = 0; a.muted = false; }; if (p && p.then) p.then(done, () => { a.muted = false; unlocked = false; }); else done(); });
-  }
-  ["pointerdown", "keydown", "touchstart"].forEach(ev => document.addEventListener(ev, unlockAudio, { capture: true, passive: true }));
   function play(name, opt) {
     if (!soundOn || !SND[name]) return null; opt = opt || {};
     const a = opt.clone ? SND[name].cloneNode(true) : SND[name];
@@ -133,7 +133,7 @@ function stopBGM() {
     if (!a) return; if (!ms) { a.pause(); try { a.currentTime = 0; } catch (e) {} return; }
     let v = a.volume; const step = v / 5, iv = setInterval(() => { v -= step; if (v <= 0.02) { clearInterval(iv); a.pause(); try { a.currentTime = 0; } catch (e) {} a.volume = 1; } else a.volume = v; }, ms / 5);
   }
-$("soundBtn").addEventListener("click", () => {
+  $("soundBtn").addEventListener("click", () => {
   soundOn = !soundOn;
   $("soundBtn").textContent = "音：" + (soundOn ? "ON" : "OFF");
   $("soundBtn").setAttribute("aria-pressed", String(soundOn));
@@ -145,16 +145,6 @@ $("soundBtn").addEventListener("click", () => {
     startBGM();
   }
 });
-// 最初のユーザー操作でBGMを開始
-function initializeBGM() {
-  startBGM();
-
-  document.removeEventListener("pointerdown", initializeBGM);
-  document.removeEventListener("keydown", initializeBGM);
-}
-
-document.addEventListener("pointerdown", initializeBGM);
-document.addEventListener("keydown", initializeBGM);
 
   // ---- 報告の演出（点→円が広がり一周→警告アイコン）----
   const FX = (() => {
