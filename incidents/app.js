@@ -15,11 +15,12 @@
     state = n;
     ["start", "intro", "office", "doc", "arg", "rank", "result"].forEach(s => $(s).hidden = s !== n);
     $("fired").hidden = n !== "fired";
-    $("trap").hidden = true; $("trap").textContent = "";
+    $("trap").hidden = true; $("trap").textContent = ""; hideCutIn();
     if (n !== "fired") { stopSound(peeSnd, 0); peeSnd = null; }
     $("tbTitle").textContent = "INCIDENTS — 調査端末";
     $("bar").hidden = !(n === "office" || n === "doc");
     $("backBtn").hidden = n !== "doc";
+    if (n === "start") drawBoard($("startBoard"), { mode: "normal", clear: true });
     window.scrollTo(0, 0);
   }
   const elapsed = () => Math.floor((Date.now() - t0) / 1000);
@@ -100,29 +101,6 @@
     Object.values(SND).forEach(a => { a.muted = true; const p = a.play(); const done = () => { a.pause(); a.currentTime = 0; a.muted = false; }; if (p && p.then) p.then(done, () => { a.muted = false; unlocked = false; }); else done(); });
   }
   ["pointerdown", "keydown", "touchstart"].forEach(ev => document.addEventListener(ev, unlockAudio, { capture: true, passive: true }));
-  // ---- BGM ----
-let bgmAudio = null;
-
-function startBGM() {
-  if (!soundOn) return;
-  if (bgmAudio && !bgmAudio.paused) return;
-
-  if (!bgmAudio) {
-    bgmAudio = new Audio("sounds/bgm.mp3");
-    bgmAudio.loop = true;
-    bgmAudio.volume = 0.25;
-  }
-
-  bgmAudio.play().catch(error => {
-    console.warn("BGMの再生に失敗しました:", error);
-  });
-}
-
-function stopBGM() {
-  if (!bgmAudio) return;
-  bgmAudio.pause();
-  bgmAudio.currentTime = 0;
-}
   function play(name, opt) {
     if (!soundOn || !SND[name]) return null; opt = opt || {};
     const a = opt.clone ? SND[name].cloneNode(true) : SND[name];
@@ -134,17 +112,9 @@ function stopBGM() {
     let v = a.volume; const step = v / 5, iv = setInterval(() => { v -= step; if (v <= 0.02) { clearInterval(iv); a.pause(); try { a.currentTime = 0; } catch (e) {} a.volume = 1; } else a.volume = v; }, ms / 5);
   }
   $("soundBtn").addEventListener("click", () => {
-  soundOn = !soundOn;
-  $("soundBtn").textContent = "音：" + (soundOn ? "ON" : "OFF");
-  $("soundBtn").setAttribute("aria-pressed", String(soundOn));
-
-  if (!soundOn) {
-    Object.values(SND).forEach(a => a.pause());
-    stopBGM();
-  } else if (state !== "start") {
-    startBGM();
-  }
-});
+    soundOn = !soundOn; $("soundBtn").textContent = "音：" + (soundOn ? "ON" : "OFF"); $("soundBtn").setAttribute("aria-pressed", String(soundOn));
+    if (!soundOn) Object.values(SND).forEach(a => a.pause());
+  });
 
   // ---- 報告の演出（点→円が広がり一周→警告アイコン）----
   const FX = (() => {
@@ -253,11 +223,18 @@ function stopBGM() {
     b.addEventListener("keydown", e => { if ((e.key === "Enter" || e.key === " ") && !e.repeat) { e.preventDefault(); e.stopPropagation(); const r = b.getBoundingClientRect(); begin(r.left + Math.min(r.width / 2, 200), r.top + r.height / 2); } });
     b.addEventListener("keyup", e => { if (e.key === "Enter" || e.key === " ") reset(); });
   }
+  // 報告成功のカットイン（画面中央に SUCCESS。操作の邪魔にならないよう、クリックは素通しする）
+  let cutT = null;
+  function cutIn() {
+    const e = $("cutin"); clearTimeout(cutT); e.hidden = false; e.classList.remove("go"); void e.offsetWidth; e.classList.add("go");
+    cutT = setTimeout(hideCutIn, 1050);
+  }
+  function hideCutIn() { const e = $("cutin"); clearTimeout(cutT); e.hidden = true; e.classList.remove("go"); }
   function report(id, b) {
     if (done) return;
     const c = C[ci];
     if (c.answer.includes(id)) {
-      found.add(id); b.classList.add("found"); hud(); play("ok"); window.__log && __log("report OK " + id);
+      found.add(id); b.classList.add("found"); hud(); play("ok"); cutIn(); window.__log && __log("report OK " + id);
       if (found.size === c.answer.length) {
         done = true;
         if (hard && rankable(c)) { say("すべての問題点を報告しました。最後に優先度を判定してください。", true); setTimeout(() => startRank(c), 1100); }
@@ -462,12 +439,85 @@ function stopBGM() {
     return d;
   }
 
+
+  // ---- スコアランキング（この端末のブラウザ内にだけ保存。通常／ハードは別の表）----
+  const RK_KEY = "incidents.ranking.v1", RK_SHOW = 10, RK_KEEP = 200;
+  let rkMem = null; // localStorageが使えない環境では、このページを開いている間だけ保持する
+  function rkLoad() {
+    try { const a = JSON.parse(localStorage.getItem(RK_KEY) || "[]"); rkMem = Array.isArray(a) ? a : []; }
+    catch (e) { rkMem = rkMem || []; }
+    return rkMem.filter(x => x && typeof x.score === "number");
+  }
+  function rkSave(list) {
+    rkMem = list.slice(0, RK_KEEP);
+    try { localStorage.setItem(RK_KEY, JSON.stringify(rkMem)); return true; } catch (e) { return false; }
+  }
+  const rkSort = a => a.slice().sort((x, y) => y.score - x.score || x.time - y.time || x.at - y.at);
+  const rkMode = (list, mode) => rkSort(list.filter(x => !!x.hard === (mode === "hard")));
+  function drawBoard(host, o) {
+    o = o || {}; let mode = o.mode || "normal";
+    const render = () => {
+      host.textContent = "";
+      const head = el("div", "bd-head"); head.appendChild(el("h2", null, "スコアランキング"));
+      const tabs = el("div", "bd-tabs");
+      [["normal", "通常"], ["hard", "ハード"]].forEach(([m, t]) => {
+        const b = el("button", "bd-tab" + (m === mode ? " on" : ""), t); b.type = "button"; b.setAttribute("aria-pressed", String(m === mode));
+        b.addEventListener("click", () => { mode = m; render(); }); tabs.appendChild(b);
+      });
+      head.appendChild(tabs); host.appendChild(head);
+      const rows = rkMode(rkLoad(), mode), top = rows.slice(0, RK_SHOW);
+      const tbl = el("table", "rk"), thead = el("thead"), hr = el("tr");
+      ["順位", "名前", "スコア", "時間"].forEach(t => hr.appendChild(el("th", null, t))); thead.appendChild(hr); tbl.appendChild(thead);
+      const tb = el("tbody");
+      if (!top.length) { const tr = el("tr", "empty"), td = el("td", null, "まだ記録がありません。"); td.colSpan = 4; tr.appendChild(td); tb.appendChild(tr); }
+      top.forEach((x, i) => {
+        const tr = el("tr", x.at === o.hi && !!x.hard === (mode === "hard") ? "me" : "");
+        tr.append(el("td", "no", String(i + 1)), el("td", "nm", x.name || "名無し"), el("td", "sc", String(x.score)), el("td", "tm", x.time + "秒")); tb.appendChild(tr);
+      });
+      tbl.appendChild(tb);
+      const wrap = el("div", "rk-wrap"); wrap.appendChild(tbl); host.appendChild(wrap);
+      host.appendChild(el("p", "small bd-note", "この端末のブラウザにだけ保存されます（ほかの人のスマホとは共有されません）。上位" + RK_SHOW + "件を表示。同点は、時間の短い順です。"));
+      if (o.clear && rows.length) {
+        let ask = false, t = null; const cb = el("button", "ghost bd-clear", "この端末の記録を消去"); cb.type = "button";
+        cb.addEventListener("click", () => {
+          if (!ask) { ask = true; cb.textContent = "本当に消去しますか？ もう一度押すと確定"; clearTimeout(t); t = setTimeout(() => { ask = false; cb.textContent = "この端末の記録を消去"; }, 4000); return; }
+          rkSave([]); render();
+        }); host.appendChild(cb);
+      }
+    };
+    render();
+    return { redraw(hi, m) { o.hi = hi; if (m) mode = m; render(); } };
+  }
+  function addRanking(host) {
+    const mode = hard ? "hard" : "normal", score = total.S, time = total.T;
+    const box = el("div", "rk-form card"), msg = el("p", null, "");
+    const before = rkMode(rkLoad(), mode).filter(x => x.score > score || (x.score === score && x.time <= time)).length + 1;
+    msg.append("あなたのスコア ", Object.assign(el("b", null, String(score)), {}), " 点は、現在 ", el("b", null, before + "位"), " です。名前を登録するとランキングに載ります。");
+    const row = el("div", "rk-row"), inp = el("input"); inp.type = "text"; inp.maxLength = 8; inp.id = "rkName"; inp.placeholder = "ニックネーム（8文字まで）"; inp.autocomplete = "off"; inp.setAttribute("aria-label", "ニックネーム");
+    const bt = el("button", "primary", "登録する"); bt.type = "button";
+    row.append(inp, bt); box.append(msg, row, el("p", "small", "本名や学校名などは入れず、ニックネームにしてください。"));
+    host.appendChild(box);
+    const bh = el("div", "board"); host.appendChild(bh);
+    const bd = drawBoard(bh, { mode });
+    const go = () => {
+      if (bt.disabled) return;
+      const e = { name: (inp.value.trim() || "名無し").slice(0, 8), score, time, hard, at: Date.now() };
+      const ok = rkSave(rkLoad().concat([e])); bt.disabled = true; inp.disabled = true;
+      const pos = rkMode(rkLoad(), mode).findIndex(x => x.at === e.at) + 1;
+      box.textContent = ""; box.appendChild(el("p", null, "登録しました。" + (pos ? pos + "位です。" : "") + (ok ? "" : "（この環境では保存できないため、このページを閉じると消えます。）")));
+      bd.redraw(e.at, mode);
+    };
+    bt.addEventListener("click", go);
+    inp.addEventListener("keydown", e => { if (e.key === "Enter" && !e.isComposing) { e.preventDefault(); go(); } });
+  }
+
   function next() {
     if (state !== "result") return;
     if (ci < C.length - 1) { ci++; startCase(); return; }
     $("resBody").textContent = "";
     const h = document.createElement("div"); h.className = "break"; h.textContent = "REPORT"; $("resBody").appendChild(h);
     $("resBody").appendChild(stats([["モード", hard ? "HARD" : "通常"], ["特定した事件", total.B + "/" + C.filter(x => x.type !== "arg").length], ["誤報告なしで特定", total.A], ["現場調査", total.arg || "-"], ["合計時間", total.T + "秒"], ["総スコア", total.S]]));
+    addRanking($("resBody"));
     $("nextBtn").textContent = "最初から";
     ci = C.length; // 最終画面マーク
   }
@@ -476,15 +526,8 @@ function stopBGM() {
     if (ci >= C.length) { ci = 0; total = { B: 0, A: 0, S: 0, T: 0 }; show("start"); } else next();
   });
   function begin(h) { hard = h; $("introMaxW").textContent = maxW() + "回目で任務失敗"; ci = 0; total = { B: 0, A: 0, S: 0, T: 0 }; show("intro"); }
-$("startBtn").addEventListener("click", () => {
-  begin(false);
-  startBGM();
-});
-
-$("startHardBtn").addEventListener("click", () => {
-  begin(true);
-  startBGM();
-});
+  $("startBtn").addEventListener("click", () => begin(false));
+  $("startHardBtn").addEventListener("click", () => begin(true));
   $("rankSubmit").addEventListener("click", submitRank);
   $("introBtn").addEventListener("click", startCase);
   $("retryBtn").addEventListener("click", startCase);
@@ -492,6 +535,7 @@ $("startHardBtn").addEventListener("click", () => {
   $("backBtn").addEventListener("click", () => show("office"));
   document.addEventListener("keydown", e => {
     if (e.key !== "Enter" || e.repeat) return;
+    if (e.target && /^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName)) return;
     if (state === "start") { e.preventDefault(); $("startBtn").click(); }
     else if (state === "intro") { e.preventDefault(); $("introBtn").click(); }
     else if (state === "result") { e.preventDefault(); $("nextBtn").click(); }

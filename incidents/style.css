@@ -372,3 +372,44 @@ body.dbg-on main{padding-bottom:55dvh}
 .chip:hover:not(:disabled){border-color:var(--amber)}
 .chip:disabled{opacity:.28;cursor:default}
 @media(max-width:600px){.cloze-slot{display:block;width:calc(100% - 8px);min-width:0}}
+
+/* スコアランキング */
+.board{max-width:640px;margin:18px auto 0}
+#result .board{max-width:none;margin:22px 0 0}
+.bd-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:8px}
+.bd-head h2{margin:0;font-size:17px;display:flex;align-items:center;gap:10px}
+.bd-head h2::before{content:"";width:5px;height:18px;background:var(--amber)}
+.bd-tabs{display:flex}
+.bd-tab{padding:4px 16px;background:var(--bg1);border:1px solid var(--line2);color:var(--dim);font-size:13px;border-radius:0}
+.bd-tab+.bd-tab{margin-left:-1px}
+.bd-tab.on{background:var(--bg3);color:var(--ink);border-color:var(--amber);position:relative}
+.rk-wrap{overflow-x:auto}
+table.rk{width:100%;border-collapse:collapse;border:1px solid var(--line);background:var(--bg2);font-size:15px}
+.rk th{padding:6px 12px;background:var(--bg1);border-bottom:1px solid var(--line2);color:var(--dim);font-size:12px;font-weight:400;text-align:left;letter-spacing:.08em}
+.rk td{padding:6px 12px;border-bottom:1px solid var(--line);line-height:1.5}
+.rk td.no,.rk td.sc,.rk td.tm{font-family:var(--mono);white-space:nowrap}
+.rk td.no{width:3.5em;color:var(--dim)}
+.rk td.sc{text-align:right;color:var(--amber);font-weight:700}
+.rk td.tm{text-align:right;color:var(--dim);width:6em}
+.rk th:nth-child(3),.rk th:nth-child(4){text-align:right}
+.rk tr:nth-child(-n+3) td.no{color:var(--amber);font-weight:700}
+.rk tr.me td{background:#2a2410}
+.rk tr.me td.nm{font-weight:700}
+.rk tr.empty td{padding:16px;color:var(--dim);text-align:center}
+.bd-note{margin:6px 0 0}
+.bd-clear{margin-top:10px}
+.rk-form{margin-top:22px}
+.rk-form p{margin:4px 0}
+.rk-row{display:flex;gap:10px;align-items:center;margin:10px 0 6px;flex-wrap:wrap}
+.rk-row .primary{margin-top:0;padding:8px 24px}
+#rkName{width:15em;max-width:100%;padding:7px 12px;background:var(--bg1);color:var(--ink);border:1px solid var(--line2);border-radius:2px;font:inherit;font-size:16px}
+
+/* 報告成功のカットイン */
+#cutin{position:fixed;left:0;right:0;top:50%;height:clamp(84px,19vh,150px);transform:translateY(-50%);z-index:90;pointer-events:none;display:flex;align-items:center;justify-content:center;overflow:hidden;background:linear-gradient(90deg,rgba(8,14,12,0),rgba(8,14,12,.9) 14%,rgba(8,14,12,.9) 86%,rgba(8,14,12,0));border-top:3px solid var(--green);border-bottom:3px solid var(--green)}
+#cutin[hidden]{display:none}
+#cutin span{font-weight:700;font-size:clamp(38px,10vw,92px);letter-spacing:.2em;padding-left:.2em;color:#fff;text-shadow:0 0 .4em rgba(86,185,148,.55);white-space:nowrap}
+#cutin.go{animation:cutBand 1.05s ease-out both}
+#cutin.go span{animation:cutText 1.05s cubic-bezier(.2,.8,.2,1) both}
+@keyframes cutBand{0%{opacity:0;transform:translateY(-50%) scaleY(.15)}12%{opacity:1;transform:translateY(-50%) scaleY(1)}84%{opacity:1;transform:translateY(-50%) scaleY(1)}100%{opacity:0;transform:translateY(-50%) scaleY(.15)}}
+@keyframes cutText{0%{transform:translateX(-45vw);opacity:0}16%{transform:translateX(0);opacity:1}80%{transform:translateX(0);opacity:1}100%{transform:translateX(45vw);opacity:0}}
+@media(prefers-reduced-motion:reduce){#cutin.go{animation:cutFade 1.05s linear both}#cutin.go span{animation:none}@keyframes cutFade{0%{opacity:0}15%,80%{opacity:1}100%{opacity:0}}}
